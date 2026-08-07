@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 
+# General Command
 up:
 	docker compose up -d
 
@@ -14,3 +15,17 @@ build:
 
 logs:
 	docker compose logs -f $(s)
+
+# Frontend Service
+up-frontend:
+	docker compose up -d frontend
+
+down-frontend:
+	docker compose down frontend
+
+# Backend Service
+up-backend:
+	docker compose up -d backend
+
+down-backend:
+	docker compose down backend

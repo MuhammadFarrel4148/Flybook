@@ -9,3 +9,13 @@ services:
       - /app/.next
     ports:
       - "3000:3000"
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    ports:
+      - "3200:3200"
