@@ -22,6 +22,7 @@
 | Backend | Express.js, TypeScript |
 | Database | PostgreSQL + Prisma ORM (via Docker Compose) |
 | Auth | JWT (HttpOnly cookie) + Google OAuth |
+| Testing | Vitest (frontend unit tests), Vitest + Supertest (backend unit & integration tests) |
 | CI/CD | GitHub Actions |
 
 ## Planned Project Structure
@@ -41,11 +42,3 @@ flybook/
 ├── Rules.md
 └── Schema.md
 ```
-
-## Roadmap
-
-1. ~~Define architecture, PRD, coding rules, and database schema~~
-2. Scaffold `apps/frontend` and `apps/backend` per `Architecture.md`
-3. Implement database schema (`Schema.md`) via Prisma migrations
-4. Build MVP features per `PRD.md`, following conventions in `Rules.md`
-5. Set up CI/CD pipeline
