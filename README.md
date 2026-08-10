@@ -22,7 +22,7 @@
 | Backend | Express.js, TypeScript |
 | Database | PostgreSQL + Prisma ORM (via Docker Compose) |
 | Auth | JWT (HttpOnly cookie) + Google OAuth |
-| Testing | Vitest (frontend unit tests), Vitest + Supertest (backend unit & integration tests) |
+| Testing | Vitest + React Testing Library (frontend unit tests), Vitest + Supertest (backend unit & integration tests) |
 | CI/CD | GitHub Actions |
 
 ## Planned Project Structure
