@@ -1,0 +1,10 @@
+{
+  "apps/frontend/**/*.{js,jsx,ts,tsx}": [
+    "apps/frontend/node_modules/.bin/eslint --config apps/frontend/eslint.config.mjs --fix",
+    "apps/frontend/node_modules/.bin/prettier --write"
+  ],
+  "apps/backend/**/*.{js,ts}": [
+    "apps/backend/node_modules/.bin/eslint --config apps/backend/eslint.config.mjs --fix",
+    "apps/backend/node_modules/.bin/prettier --write"
+  ]
+}
