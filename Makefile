@@ -16,6 +16,8 @@ build:
 logs:
 	docker compose logs -f $(s)
 
+test: test-frontend test-backend
+
 # Frontend Service
 up-frontend:
 	docker compose up -d frontend
@@ -23,9 +25,15 @@ up-frontend:
 down-frontend:
 	docker compose down frontend
 
+test-frontend:
+	cd apps/frontend && npm test
+
 # Backend Service
 up-backend:
 	docker compose up -d backend
 
 down-backend:
 	docker compose down backend
+
+test-backend:
+	cd apps/backend && npm test
