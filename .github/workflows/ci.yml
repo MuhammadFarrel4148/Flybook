@@ -1,0 +1,45 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    container: node:24-bookworm-slim
+    env:
+      PORT: ${{ secrets.PORT_BACKEND }}
+      DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?schema=public
+    services:
+      db:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: apt-get update -y && apt-get install -y openssl
+      - name: Install backend deps
+        run: cd apps/backend && npm ci
+      - name: Generate Prisma Client
+        run: cd apps/backend && npx prisma generate
+      - name: Run backend tests
+        run: cd apps/backend && npm test
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install frontend deps
+        run: cd apps/frontend && npm ci
+      - name: Run frontend tests
+        run: cd apps/frontend && npm test
