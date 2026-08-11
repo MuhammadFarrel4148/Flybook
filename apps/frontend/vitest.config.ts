@@ -6,5 +6,6 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
     exclude: ["node_modules", ".next"],
+    passWithNoTests: true,
   },
 });
