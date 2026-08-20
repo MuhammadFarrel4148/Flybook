@@ -1,32 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRegister } from "@/hooks/useRegister";
 import { TextField } from "@/app/components/TextField";
+import { useLogin } from "@/hooks/useLogin";
+import React, { useState } from "react";
 
-export default function InputForm() {
-  const [fullName, setFullName] = useState("");
+export default function InputContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const { mutate, isPending, isSuccess, error } = useRegister();
+  const { mutate, isPending, isSuccess, error } = useLogin();
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    mutate({ fullName, email, password });
+    mutate({ email, password });
   }
 
   return (
     <div className="flex flex-col gap-6">
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <TextField
-          title="Full Name"
-          type="text"
-          exampleInput="e.g. Jane Doe"
-          value={fullName}
-          onChange={setFullName}
-        />
         <TextField
           title="Email Address"
           type="text"
@@ -41,27 +32,16 @@ export default function InputForm() {
           value={password}
           onChange={setPassword}
         />
-        <TextField
-          title="Confirm Password"
-          type="password"
-          exampleInput="********"
-          value={confirmPassword}
-          onChange={setConfirmPassword}
-        />
 
         {error && <p className="text-sm text-red-600">{error.message}</p>}
-        {isSuccess && (
-          <p className="text-sm text-green-600">
-            Akun berhasil dibuat, silahkan login.
-          </p>
-        )}
+        {isSuccess && <p className="text-sm text-green-600">Login berhasil</p>}
 
         <button
           type="submit"
           disabled={isPending}
           className="w-full h-11 rounded-lg mt-2 bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isPending ? "Creating..." : "Create Account"}
+          {isPending ? "Loading..." : "Login"}
         </button>
       </form>
 
@@ -90,7 +70,7 @@ export default function InputForm() {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>Sign up with Google</span>
+        <span>Sign in with Google</span>
       </div>
     </div>
   );

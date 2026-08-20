@@ -4,7 +4,6 @@ export const authRepository = {
   findUserByEmail: (email: string) => {
     return prisma.user.findUnique({
       where: { email },
-      select: { id: true },
     });
   },
 

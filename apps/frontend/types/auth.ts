@@ -9,3 +9,13 @@ export interface RegisterResponseData {
   fullName: string;
   email: string;
 }
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponseData {
+  success: boolean;
+  message: string;
+}
