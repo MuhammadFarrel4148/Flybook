@@ -12,6 +12,7 @@ jobs:
     env:
       PORT: ${{ secrets.PORT_BACKEND }}
       DATABASE_URL: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB }}?schema=public
+      DATABASE_URL_TEST: postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB_TEST }}?schema=public
     services:
       db:
         image: postgres:15
