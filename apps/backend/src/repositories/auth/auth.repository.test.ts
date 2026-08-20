@@ -33,7 +33,6 @@ describe("authRepository", () => {
 
       expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
         where: { email: "jane@example.com" },
-        select: { id: true },
       });
       expect(result).toEqual({ id: "user-1" });
     });

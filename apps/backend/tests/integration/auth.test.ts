@@ -66,3 +66,61 @@ describe("POST /api/auth/register", () => {
     expect(res.body.error.code).toBe("INTERNAL_ERROR");
   });
 });
+
+describe("POST /api/auth/login", () => {
+  const credentials = { email: "jane@example.com", password: "secret123" };
+
+  async function seedUser() {
+    await prisma.user.create({
+      data: {
+        fullName: "Jane Doe",
+        email: credentials.email,
+        password: credentials.password,
+      },
+    });
+  }
+
+  it("logs in with correct credentials and sets an httpOnly token cookie", async () => {
+    await seedUser();
+
+    const res = await request(app).post("/api/auth/login").send(credentials);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      success: true,
+      message: "Login berhasil",
+    });
+
+    const cookies = res.headers["set-cookie"];
+    expect(cookies).toBeDefined();
+    expect(cookies?.some((cookie: string) => cookie.startsWith("token="))).toBe(
+      true,
+    );
+  });
+
+  it("returns 404 when no account matches the email", async () => {
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "nobody@example.com", password: "secret123" });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: "NotFoundError", message: "Account not found" },
+    });
+  });
+
+  it("returns 400 when the password is wrong", async () => {
+    await seedUser();
+
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ email: credentials.email, password: "wrong-password" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: "BadRequestError", message: "Email or password wrong" },
+    });
+  });
+});

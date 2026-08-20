@@ -1,7 +1,12 @@
 import { apiFetch, type ApiSuccessBody } from "@/lib/apiClient";
-import type { RegisterPayload, RegisterResponseData } from "@/types/auth";
+import type {
+  RegisterPayload,
+  RegisterResponseData,
+  LoginPayload,
+  LoginResponseData,
+} from "@/types/auth";
 
-export async function registerUser(
+async function registerUser(
   payload: RegisterPayload,
 ): Promise<RegisterResponseData> {
   const response = await apiFetch<ApiSuccessBody<RegisterResponseData>>(
@@ -14,3 +19,17 @@ export async function registerUser(
 
   return response.data;
 }
+
+async function loginUser(payload: LoginPayload): Promise<LoginResponseData> {
+  const response = await apiFetch<ApiSuccessBody<LoginResponseData>>(
+    "/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return response;
+}
+
+export { registerUser, loginUser };

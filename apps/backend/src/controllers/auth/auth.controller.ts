@@ -16,4 +16,20 @@ export const authController = {
       },
     });
   },
+
+  login: async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+    const token = await authService.login(email, password);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login berhasil",
+    });
+  },
 };

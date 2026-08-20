@@ -27,8 +27,6 @@ app.use("/api/auth", authRouter);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 4th param required so Express treats this as error-handling middleware
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-
   if (err instanceof ClientError) {
     return res.status(err.statusCode).json({
       success: false,

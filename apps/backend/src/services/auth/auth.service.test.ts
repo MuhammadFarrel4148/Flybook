@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ConflictError } from "../../../exceptions/ConflictError.ts";
+import { NotFoundError } from "../../../exceptions/NotFoundError.ts";
+import { BadRequestError } from "../../../exceptions/BadRequestError.ts";
 
 vi.mock("../../repositories/auth/auth.repository.ts", () => ({
   authRepository: {
@@ -8,7 +10,12 @@ vi.mock("../../repositories/auth/auth.repository.ts", () => ({
   },
 }));
 
+vi.mock("../../../lib/generateToken.ts", () => ({
+  generateToken: vi.fn(),
+}));
+
 import { authRepository } from "../../repositories/auth/auth.repository.ts";
+import { generateToken } from "../../../lib/generateToken.ts";
 import { authService } from "./auth.service.ts";
 
 describe("authService.register", () => {
@@ -55,5 +62,63 @@ describe("authService.register", () => {
       statusCode: 409,
     });
     expect(authRepository.registerAccount).not.toHaveBeenCalled();
+  });
+});
+
+describe("authService.login", () => {
+  beforeEach(() => {
+    vi.mocked(authRepository.findUserByEmail).mockReset();
+    vi.mocked(generateToken).mockReset();
+  });
+
+  it("returns a token when the email and password match", async () => {
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue({
+      id: "user-1",
+      email: "jane@example.com",
+      password: "secret123",
+    });
+    vi.mocked(generateToken).mockReturnValue("signed-token");
+
+    const result = await authService.login("jane@example.com", "secret123");
+
+    expect(authRepository.findUserByEmail).toHaveBeenCalledWith(
+      "jane@example.com",
+    );
+    expect(generateToken).toHaveBeenCalledWith("user-1", "jane@example.com");
+    expect(result).toBe("signed-token");
+  });
+
+  it("throws NotFoundError when no account matches the email", async () => {
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
+
+    await expect(
+      authService.login("nobody@example.com", "secret123"),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      authService.login("nobody@example.com", "secret123"),
+    ).rejects.toMatchObject({
+      message: "Account not found",
+      statusCode: 404,
+    });
+    expect(generateToken).not.toHaveBeenCalled();
+  });
+
+  it("throws BadRequestError when the password does not match", async () => {
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue({
+      id: "user-1",
+      email: "jane@example.com",
+      password: "secret123",
+    });
+
+    await expect(
+      authService.login("jane@example.com", "wrong-password"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    await expect(
+      authService.login("jane@example.com", "wrong-password"),
+    ).rejects.toMatchObject({
+      message: "Email or password wrong",
+      statusCode: 400,
+    });
+    expect(generateToken).not.toHaveBeenCalled();
   });
 });
