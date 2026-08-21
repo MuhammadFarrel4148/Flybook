@@ -50,21 +50,43 @@ describe("authRepository", () => {
     it("creates a user via prisma.user.create with the given fields", async () => {
       prismaMock.user.create.mockResolvedValue({ id: "user-1" });
 
-      const result = await authRepository.registerAccount(
-        "Jane Doe",
-        "jane@example.com",
-        "secret123",
-      );
+      const result = await authRepository.registerAccount({
+        fullName: "Jane Doe",
+        email: "jane@example.com",
+        password: "secret123",
+      });
 
       expect(prismaMock.user.create).toHaveBeenCalledWith({
         data: {
           email: "jane@example.com",
           password: "secret123",
+          googleId: undefined,
           fullName: "Jane Doe",
         },
         select: { id: true },
       });
       expect(result).toEqual({ id: "user-1" });
+    });
+
+    it("creates an SSO user via prisma.user.create with a googleId and no password", async () => {
+      prismaMock.user.create.mockResolvedValue({ id: "user-2" });
+
+      const result = await authRepository.registerAccount({
+        fullName: "John Sso",
+        email: "john@example.com",
+        googleId: "google-sub-123",
+      });
+
+      expect(prismaMock.user.create).toHaveBeenCalledWith({
+        data: {
+          email: "john@example.com",
+          password: undefined,
+          googleId: "google-sub-123",
+          fullName: "John Sso",
+        },
+        select: { id: true },
+      });
+      expect(result).toEqual({ id: "user-2" });
     });
   });
 });

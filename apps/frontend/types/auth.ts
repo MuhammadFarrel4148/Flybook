@@ -10,6 +10,17 @@ export interface RegisterResponseData {
   email: string;
 }
 
+export interface RegisterSsoPayload {
+  credential: string;
+}
+
+export interface RegisterSsoResponseData {
+  id: string;
+  fullName: string;
+  email: string;
+  googleId: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;

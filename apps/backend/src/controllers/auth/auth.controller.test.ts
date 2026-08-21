@@ -4,7 +4,7 @@ import { ConflictError } from "../../../exceptions/ConflictError.ts";
 import { NotFoundError } from "../../../exceptions/NotFoundError.ts";
 
 vi.mock("../../services/auth/auth.service.ts", () => ({
-  authService: { register: vi.fn(), login: vi.fn() },
+  authService: { register: vi.fn(), registerSso: vi.fn(), login: vi.fn() },
 }));
 
 import { authService } from "../../services/auth/auth.service.ts";
@@ -30,7 +30,7 @@ describe("authController.register", () => {
     vi.mocked(authService.register).mockReset();
   });
 
-  it("calls authService.register with the request body and responds 200 with the created user", async () => {
+  it("calls authService.register with the request body and responds 201 with the created user", async () => {
     vi.mocked(authService.register).mockResolvedValue({ id: "user-1" });
     const req = { body: payload } as unknown as Request;
     const { res, status, json } = createMockResponse();
@@ -42,7 +42,7 @@ describe("authController.register", () => {
       payload.email,
       payload.password,
     );
-    expect(status).toHaveBeenCalledWith(200);
+    expect(status).toHaveBeenCalledWith(201);
     expect(json).toHaveBeenCalledWith({
       success: true,
       message: "Registrasi berhasil, silahkan lakukan login",
@@ -59,6 +59,60 @@ describe("authController.register", () => {
     await expect(authController.register(req, res)).rejects.toBeInstanceOf(
       ConflictError,
     );
+    expect(status).not.toHaveBeenCalled();
+    expect(json).not.toHaveBeenCalled();
+  });
+});
+
+const ssoPayload = { credential: "google-credential-token" };
+
+describe("authController.registerSso", () => {
+  beforeEach(() => {
+    vi.mocked(authService.registerSso).mockReset();
+  });
+
+  it("calls authService.registerSso with the credential, sets the token cookie, and responds 201 with the created user", async () => {
+    vi.mocked(authService.registerSso).mockResolvedValue({
+      id: "user-1",
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      googleId: "google-sub-123",
+      token: "signed-token",
+    });
+    const req = { body: ssoPayload } as unknown as Request;
+    const { res, status, json, cookie } = createMockResponse();
+
+    await authController.registerSso(req, res);
+
+    expect(authService.registerSso).toHaveBeenCalledWith(ssoPayload.credential);
+    expect(cookie).toHaveBeenCalledWith("token", "signed-token", {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    expect(status).toHaveBeenCalledWith(201);
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      message: "Registrasi berhasil",
+      data: {
+        id: "user-1",
+        fullName: "Jane Doe",
+        email: "jane@example.com",
+        googleId: "google-sub-123",
+      },
+    });
+  });
+
+  it("propagates the error from authService and never sets a cookie or responds when SSO registration fails", async () => {
+    const error = new ConflictError("Email already registered");
+    vi.mocked(authService.registerSso).mockRejectedValue(error);
+    const req = { body: ssoPayload } as unknown as Request;
+    const { res, status, json, cookie } = createMockResponse();
+
+    await expect(authController.registerSso(req, res)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+    expect(cookie).not.toHaveBeenCalled();
     expect(status).not.toHaveBeenCalled();
     expect(json).not.toHaveBeenCalled();
   });

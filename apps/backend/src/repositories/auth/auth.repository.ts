@@ -7,11 +7,17 @@ export const authRepository = {
     });
   },
 
-  registerAccount: (fullName: string, email: string, password: string) => {
+  registerAccount: ({
+    fullName,
+    email,
+    password,
+    googleId,
+  }: registerAccountProps) => {
     return prisma.user.create({
       data: {
         email,
         password,
+        googleId,
         fullName,
       },
       select: {
@@ -20,3 +26,10 @@ export const authRepository = {
     });
   },
 };
+
+interface registerAccountProps {
+  fullName: string;
+  email: string;
+  password?: string | undefined;
+  googleId?: string | undefined;
+}
