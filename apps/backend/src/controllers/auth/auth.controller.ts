@@ -6,13 +6,36 @@ export const authController = {
     const { fullName, email, password } = req.body;
     const { id } = await authService.register(fullName, email, password);
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
       message: "Registrasi berhasil, silahkan lakukan login",
       data: {
         id: id,
         fullName: fullName,
         email: email,
+      },
+    });
+  },
+
+  registerSso: async (req: Request, res: Response) => {
+    const { credential } = req.body;
+    const { id, fullName, email, googleId, token } =
+      await authService.registerSso(credential);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Registrasi berhasil",
+      data: {
+        id: id,
+        fullName: fullName,
+        email: email,
+        googleId: googleId,
       },
     });
   },

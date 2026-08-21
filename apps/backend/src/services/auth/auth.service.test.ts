@@ -14,6 +14,16 @@ vi.mock("../../../lib/generateToken.ts", () => ({
   generateToken: vi.fn(),
 }));
 
+const { verifyIdTokenMock } = vi.hoisted(() => ({
+  verifyIdTokenMock: vi.fn(),
+}));
+
+vi.mock("google-auth-library", () => ({
+  OAuth2Client: class {
+    verifyIdToken = verifyIdTokenMock;
+  },
+}));
+
 import { authRepository } from "../../repositories/auth/auth.repository.ts";
 import { generateToken } from "../../../lib/generateToken.ts";
 import { authService } from "./auth.service.ts";
@@ -39,11 +49,11 @@ describe("authService.register", () => {
     expect(authRepository.findUserByEmail).toHaveBeenCalledWith(
       "jane@example.com",
     );
-    expect(authRepository.registerAccount).toHaveBeenCalledWith(
-      "Jane Doe",
-      "jane@example.com",
-      "secret123",
-    );
+    expect(authRepository.registerAccount).toHaveBeenCalledWith({
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      password: "secret123",
+    });
     expect(result).toEqual({ id: "user-1" });
   });
 
@@ -61,6 +71,93 @@ describe("authService.register", () => {
       message: "Email already registered",
       statusCode: 409,
     });
+    expect(authRepository.registerAccount).not.toHaveBeenCalled();
+  });
+});
+
+describe("authService.registerSso", () => {
+  beforeEach(() => {
+    vi.mocked(authRepository.findUserByEmail).mockReset();
+    vi.mocked(authRepository.registerAccount).mockReset();
+    vi.mocked(generateToken).mockReset();
+    verifyIdTokenMock.mockReset();
+  });
+
+  it("registers a new account from a verified Google credential and issues a token", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: true,
+        name: "Jane Doe",
+        email: "jane@example.com",
+        sub: "google-sub-123",
+      }),
+    });
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
+    vi.mocked(authRepository.registerAccount).mockResolvedValue({
+      id: "user-1",
+    });
+    vi.mocked(generateToken).mockReturnValue("signed-token");
+
+    const result = await authService.registerSso("valid-credential");
+
+    expect(verifyIdTokenMock).toHaveBeenCalledWith({
+      idToken: "valid-credential",
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    expect(authRepository.registerAccount).toHaveBeenCalledWith({
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      googleId: "google-sub-123",
+    });
+    expect(generateToken).toHaveBeenCalledWith("user-1", "jane@example.com");
+    expect(result).toEqual({
+      id: "user-1",
+      fullName: "Jane Doe",
+      email: "jane@example.com",
+      googleId: "google-sub-123",
+      token: "signed-token",
+    });
+  });
+
+  it("throws BadRequestError and skips token verification when credential is missing", async () => {
+    await expect(authService.registerSso("")).rejects.toBeInstanceOf(
+      BadRequestError,
+    );
+    expect(verifyIdTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("throws BadRequestError when the Google email is not verified", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: false,
+        name: "Jane Doe",
+        email: "jane@example.com",
+        sub: "google-sub-123",
+      }),
+    });
+
+    await expect(
+      authService.registerSso("valid-credential"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(authRepository.registerAccount).not.toHaveBeenCalled();
+  });
+
+  it("throws ConflictError and skips registerAccount when the email already exists", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: true,
+        name: "Jane Doe",
+        email: "jane@example.com",
+        sub: "google-sub-123",
+      }),
+    });
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue({
+      id: "existing-user",
+    });
+
+    await expect(
+      authService.registerSso("valid-credential"),
+    ).rejects.toBeInstanceOf(ConflictError);
     expect(authRepository.registerAccount).not.toHaveBeenCalled();
   });
 });
