@@ -19,9 +19,11 @@ function createMockResponse() {
   const json = vi.fn();
   const status = vi.fn().mockReturnValue({ json });
   const cookie = vi.fn();
-  const res = { status, cookie } as unknown as Response;
+  const clearCookie = vi.fn();
+  const res = { status, cookie, clearCookie } as unknown as Response;
   cookie.mockReturnValue(res);
-  return { res, status, json, cookie };
+  clearCookie.mockReturnValue(res);
+  return { res, status, json, cookie, clearCookie };
 }
 
 const payload = {
@@ -208,5 +210,24 @@ describe("authController.loginSso", () => {
     expect(cookie).not.toHaveBeenCalled();
     expect(status).not.toHaveBeenCalled();
     expect(json).not.toHaveBeenCalled();
+  });
+});
+
+describe("authController.logout", () => {
+  it("clears the token cookie and responds 200", async () => {
+    const req = {} as unknown as Request;
+    const { res, status, json, clearCookie } = createMockResponse();
+
+    await authController.logout(req, res);
+
+    expect(clearCookie).toHaveBeenCalledWith("token", {
+      httpOnly: true,
+      sameSite: "lax",
+    });
+    expect(status).toHaveBeenCalledWith(200);
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      message: "Logout berhasil",
+    });
   });
 });

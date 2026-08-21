@@ -39,3 +39,8 @@ export interface LoginSsoResponseData {
   success: boolean;
   message: string;
 }
+
+export interface LogoutResponseData {
+  success: boolean;
+  message: string;
+}

@@ -310,3 +310,24 @@ describe("POST /api/auth/login/sso", () => {
     });
   });
 });
+
+describe("POST /api/auth/logout", () => {
+  it("clears the token cookie and responds 200", async () => {
+    const res = await request(app).post("/api/auth/logout");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      success: true,
+      message: "Logout berhasil",
+    });
+
+    const cookies = res.headers["set-cookie"];
+    expect(cookies).toBeDefined();
+    expect(
+      cookies?.some(
+        (cookie: string) =>
+          cookie.startsWith("token=;") && /Expires=/.test(cookie),
+      ),
+    ).toBe(true);
+  });
+});
