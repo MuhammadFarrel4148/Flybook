@@ -71,4 +71,16 @@ export const authController = {
       message: "Login berhasil",
     });
   },
+
+  logout: async (req: Request, res: Response) => {
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout berhasil",
+    });
+  },
 };
