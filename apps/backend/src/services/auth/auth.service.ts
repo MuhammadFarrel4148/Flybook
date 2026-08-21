@@ -74,4 +74,42 @@ export const authService = {
 
     return token;
   },
+
+  loginSso: async (credential: string) => {
+    if (!credential) {
+      throw new BadRequestError("Token tidak ditemukan");
+    }
+
+    let ticket;
+    try {
+      ticket = await CLIENT.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+    } catch {
+      throw new BadRequestError("Token Google tidak valid");
+    }
+
+    const payload = ticket.getPayload();
+
+    if (!payload?.email_verified) {
+      throw new BadRequestError("Email belum terverifikasi");
+    }
+
+    const { email } = payload;
+
+    const user = await authRepository.findUserByEmail(email!);
+
+    if (!user) {
+      throw new NotFoundError("Akun tidak ditemukan");
+    }
+
+    if (!user.googleId) {
+      throw new BadRequestError("Akun ini tidak terdaftar melalui Google SSO");
+    }
+
+    const token = generateToken(user.id, email!);
+
+    return token;
+  },
 };

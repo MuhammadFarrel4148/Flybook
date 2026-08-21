@@ -4,7 +4,12 @@ import { ConflictError } from "../../../exceptions/ConflictError.ts";
 import { NotFoundError } from "../../../exceptions/NotFoundError.ts";
 
 vi.mock("../../services/auth/auth.service.ts", () => ({
-  authService: { register: vi.fn(), registerSso: vi.fn(), login: vi.fn() },
+  authService: {
+    register: vi.fn(),
+    registerSso: vi.fn(),
+    login: vi.fn(),
+    loginSso: vi.fn(),
+  },
 }));
 
 import { authService } from "../../services/auth/auth.service.ts";
@@ -158,6 +163,46 @@ describe("authController.login", () => {
     const { res, status, json, cookie } = createMockResponse();
 
     await expect(authController.login(req, res)).rejects.toBeInstanceOf(
+      NotFoundError,
+    );
+    expect(cookie).not.toHaveBeenCalled();
+    expect(status).not.toHaveBeenCalled();
+    expect(json).not.toHaveBeenCalled();
+  });
+});
+
+describe("authController.loginSso", () => {
+  beforeEach(() => {
+    vi.mocked(authService.loginSso).mockReset();
+  });
+
+  it("calls authService.loginSso with the credential, sets the token cookie, and responds 200", async () => {
+    vi.mocked(authService.loginSso).mockResolvedValue("signed-token");
+    const req = { body: ssoPayload } as unknown as Request;
+    const { res, status, json, cookie } = createMockResponse();
+
+    await authController.loginSso(req, res);
+
+    expect(authService.loginSso).toHaveBeenCalledWith(ssoPayload.credential);
+    expect(cookie).toHaveBeenCalledWith("token", "signed-token", {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    expect(status).toHaveBeenCalledWith(200);
+    expect(json).toHaveBeenCalledWith({
+      success: true,
+      message: "Login berhasil",
+    });
+  });
+
+  it("propagates the error from authService and never sets a cookie or responds when SSO login fails", async () => {
+    const error = new NotFoundError("Akun tidak ditemukan");
+    vi.mocked(authService.loginSso).mockRejectedValue(error);
+    const req = { body: ssoPayload } as unknown as Request;
+    const { res, status, json, cookie } = createMockResponse();
+
+    await expect(authController.loginSso(req, res)).rejects.toBeInstanceOf(
       NotFoundError,
     );
     expect(cookie).not.toHaveBeenCalled();

@@ -219,3 +219,105 @@ describe("authService.login", () => {
     expect(generateToken).not.toHaveBeenCalled();
   });
 });
+
+describe("authService.loginSso", () => {
+  beforeEach(() => {
+    vi.mocked(authRepository.findUserByEmail).mockReset();
+    vi.mocked(generateToken).mockReset();
+    verifyIdTokenMock.mockReset();
+  });
+
+  it("returns a token for an existing Google-linked account with a verified credential", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: true,
+        email: "jane@example.com",
+      }),
+    });
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue({
+      id: "user-1",
+      email: "jane@example.com",
+      googleId: "google-sub-123",
+    });
+    vi.mocked(generateToken).mockReturnValue("signed-token");
+
+    const result = await authService.loginSso("valid-credential");
+
+    expect(verifyIdTokenMock).toHaveBeenCalledWith({
+      idToken: "valid-credential",
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    expect(generateToken).toHaveBeenCalledWith("user-1", "jane@example.com");
+    expect(result).toBe("signed-token");
+  });
+
+  it("throws BadRequestError and skips token verification when credential is missing", async () => {
+    await expect(authService.loginSso("")).rejects.toBeInstanceOf(
+      BadRequestError,
+    );
+    expect(verifyIdTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("throws BadRequestError when the Google email is not verified", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: false,
+        email: "jane@example.com",
+      }),
+    });
+
+    await expect(
+      authService.loginSso("valid-credential"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(authRepository.findUserByEmail).not.toHaveBeenCalled();
+  });
+
+  it("throws NotFoundError when no account matches the email", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: true,
+        email: "nobody@example.com",
+      }),
+    });
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
+
+    await expect(
+      authService.loginSso("valid-credential"),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      authService.loginSso("valid-credential"),
+    ).rejects.toMatchObject({
+      message: "Akun tidak ditemukan",
+      statusCode: 404,
+    });
+    expect(generateToken).not.toHaveBeenCalled();
+  });
+
+  it("throws BadRequestError when the account exists but was not registered via Google", async () => {
+    verifyIdTokenMock.mockResolvedValue({
+      getPayload: () => ({
+        email_verified: true,
+        email: "jane@example.com",
+      }),
+    });
+    vi.mocked(authRepository.findUserByEmail).mockResolvedValue({
+      id: "user-1",
+      email: "jane@example.com",
+      googleId: null,
+    });
+
+    await expect(
+      authService.loginSso("valid-credential"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(generateToken).not.toHaveBeenCalled();
+  });
+
+  it("throws BadRequestError when the Google credential is invalid or expired", async () => {
+    verifyIdTokenMock.mockRejectedValue(new Error("invalid token signature"));
+
+    await expect(
+      authService.loginSso("garbage-credential"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    expect(authRepository.findUserByEmail).not.toHaveBeenCalled();
+  });
+});

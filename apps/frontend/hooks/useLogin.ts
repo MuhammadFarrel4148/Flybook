@@ -1,8 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
-import { loginUser } from "@/services/authService";
+import { loginUser, loginUserSso } from "@/services/authService";
 
-export function useLogin() {
+function useLogin() {
   return useMutation({
     mutationFn: loginUser,
   });
 }
+
+function useLoginSso() {
+  return useMutation({
+    mutationFn: loginUserSso,
+  });
+}
+
+export { useLogin, useLoginSso };

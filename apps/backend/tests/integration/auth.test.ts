@@ -205,3 +205,108 @@ describe("POST /api/auth/login", () => {
     });
   });
 });
+
+describe("POST /api/auth/login/sso", () => {
+  function mockGooglePayload(payload: Record<string, unknown>) {
+    verifyIdTokenMock.mockResolvedValue({ getPayload: () => payload });
+  }
+
+  async function seedGoogleUser() {
+    await prisma.user.create({
+      data: {
+        fullName: "Jane Sso",
+        email: "jane.sso@example.com",
+        googleId: "google-sub-123",
+      },
+    });
+  }
+
+  it("logs in an existing Google-linked account and sets an httpOnly token cookie", async () => {
+    await seedGoogleUser();
+    mockGooglePayload({
+      email_verified: true,
+      email: "jane.sso@example.com",
+    });
+
+    const res = await request(app)
+      .post("/api/auth/login/sso")
+      .send({ credential: "valid-google-credential" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      success: true,
+      message: "Login berhasil",
+    });
+
+    const cookies = res.headers["set-cookie"];
+    expect(cookies).toBeDefined();
+    expect(cookies?.some((cookie: string) => cookie.startsWith("token="))).toBe(
+      true,
+    );
+  });
+
+  it("responds 404 when no account matches the email", async () => {
+    mockGooglePayload({
+      email_verified: true,
+      email: "nobody@example.com",
+    });
+
+    const res = await request(app)
+      .post("/api/auth/login/sso")
+      .send({ credential: "valid-google-credential" });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: "NotFoundError", message: "Akun tidak ditemukan" },
+    });
+  });
+
+  it("responds 400 when the account exists but was registered without Google SSO", async () => {
+    await prisma.user.create({
+      data: {
+        fullName: "Jane Doe",
+        email: "jane@example.com",
+        password: "secret123",
+      },
+    });
+    mockGooglePayload({
+      email_verified: true,
+      email: "jane@example.com",
+    });
+
+    const res = await request(app)
+      .post("/api/auth/login/sso")
+      .send({ credential: "valid-google-credential" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: {
+        code: "BadRequestError",
+        message: "Akun ini tidak terdaftar melalui Google SSO",
+      },
+    });
+  });
+
+  it("responds 400 when no credential is provided", async () => {
+    const res = await request(app).post("/api/auth/login/sso").send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("BadRequestError");
+  });
+
+  it("responds 400 when the Google credential is invalid or expired", async () => {
+    verifyIdTokenMock.mockRejectedValue(new Error("invalid token signature"));
+
+    const res = await request(app)
+      .post("/api/auth/login/sso")
+      .send({ credential: "garbage-credential" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: { code: "BadRequestError", message: "Token Google tidak valid" },
+    });
+  });
+});
