@@ -30,3 +30,12 @@ export interface LoginResponseData {
   success: boolean;
   message: string;
 }
+
+export interface LoginSsoPayload {
+  credential: string;
+}
+
+export interface LoginSsoResponseData {
+  success: boolean;
+  message: string;
+}

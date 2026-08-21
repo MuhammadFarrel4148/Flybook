@@ -6,6 +6,8 @@ import type {
   RegisterSsoResponseData,
   LoginPayload,
   LoginResponseData,
+  LoginSsoPayload,
+  LoginSsoResponseData,
 } from "@/types/auth";
 
 async function registerUser(
@@ -48,4 +50,18 @@ async function loginUser(payload: LoginPayload): Promise<LoginResponseData> {
   return response;
 }
 
-export { registerUser, registerUserSso, loginUser };
+async function loginUserSso(
+  payload: LoginSsoPayload,
+): Promise<LoginSsoResponseData> {
+  const response = await apiFetch<ApiSuccessBody<LoginSsoResponseData>>(
+    "/auth/login/sso",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return response;
+}
+
+export { registerUser, registerUserSso, loginUser, loginUserSso };
