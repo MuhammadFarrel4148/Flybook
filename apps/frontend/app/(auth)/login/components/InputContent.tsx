@@ -4,10 +4,12 @@ import { TextField } from "@/app/components/TextField";
 import { useLogin, useLoginSso } from "@/hooks/useLogin";
 import React, { useState } from "react";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { useRouter } from "next/navigation";
 
 export default function InputContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter();
 
   const { mutate, isPending, isSuccess, error } = useLogin();
   const {
@@ -19,14 +21,28 @@ export default function InputContent() {
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    mutate({ email, password });
+    mutate(
+      { email, password },
+      {
+        onSuccess: () => {
+          router.push("/flight");
+        },
+      },
+    );
   }
 
   function handleSsoSuccess(credentialResponse: CredentialResponse) {
     const token = credentialResponse.credential;
 
     if (token) {
-      mutateSso({ credential: token });
+      mutateSso(
+        { credential: token },
+        {
+          onSuccess: () => {
+            router.push("/flight");
+          },
+        },
+      );
     }
   }
 
