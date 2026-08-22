@@ -13,7 +13,10 @@ export default function Header() {
         </h1>
         <p className="text-sm text-slate-500">
           Enter your details below to get started or{" "}
-          <a href="#" className="text-blue-700 font-semibold hover:underline">
+          <a
+            href="/login"
+            className="text-blue-700 font-semibold hover:underline"
+          >
             sign in
           </a>
           .
