@@ -29,10 +29,15 @@ export const authService = {
       throw new BadRequestError("Token tidak ditemukan");
     }
 
-    const ticket = await CLIENT.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    let ticket;
+    try {
+      ticket = await CLIENT.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+    } catch {
+      throw new BadRequestError("Token Google tidak valid");
+    }
 
     const payload = ticket.getPayload();
 

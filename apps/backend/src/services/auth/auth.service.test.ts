@@ -160,6 +160,21 @@ describe("authService.registerSso", () => {
     ).rejects.toBeInstanceOf(ConflictError);
     expect(authRepository.registerAccount).not.toHaveBeenCalled();
   });
+
+  it("throws BadRequestError when the Google credential is invalid or expired", async () => {
+    verifyIdTokenMock.mockRejectedValue(new Error("invalid token signature"));
+
+    await expect(
+      authService.registerSso("garbage-credential"),
+    ).rejects.toBeInstanceOf(BadRequestError);
+    await expect(
+      authService.registerSso("garbage-credential"),
+    ).rejects.toMatchObject({
+      message: "Token Google tidak valid",
+      statusCode: 400,
+    });
+    expect(authRepository.findUserByEmail).not.toHaveBeenCalled();
+  });
 });
 
 describe("authService.login", () => {
@@ -318,6 +333,12 @@ describe("authService.loginSso", () => {
     await expect(
       authService.loginSso("garbage-credential"),
     ).rejects.toBeInstanceOf(BadRequestError);
+    await expect(
+      authService.loginSso("garbage-credential"),
+    ).rejects.toMatchObject({
+      message: "Token Google tidak valid",
+      statusCode: 400,
+    });
     expect(authRepository.findUserByEmail).not.toHaveBeenCalled();
   });
 });
