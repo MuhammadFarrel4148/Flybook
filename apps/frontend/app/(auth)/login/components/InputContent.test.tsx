@@ -3,6 +3,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Providers from "@/app/providers";
 import InputContent from "./InputContent";
 
+const pushMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+}));
+
 vi.mock("@react-oauth/google", () => ({
   GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) =>
     children,
@@ -36,6 +42,7 @@ function mockFetchOnce(response: {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  pushMock.mockReset();
 });
 
 function renderForm() {
@@ -96,6 +103,7 @@ describe("InputContent (login)", () => {
       expect(screen.getByText("Berhasil Login")).toBeInTheDocument(),
     );
     expect(screen.getByRole("button", { name: /^login$/i })).not.toBeDisabled();
+    expect(pushMock).toHaveBeenCalledWith("/flight");
   });
 
   it("shows the server error message when login fails", async () => {
@@ -115,6 +123,7 @@ describe("InputContent (login)", () => {
     await waitFor(() =>
       expect(screen.getByText("Account not found")).toBeInTheDocument(),
     );
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("submits exactly email and password", async () => {
@@ -178,6 +187,7 @@ describe("InputContent (login) — Google SSO", () => {
       expect(screen.getByText("Berhasil Login")).toBeInTheDocument(),
     );
     expect(screen.queryByText("Signing in...")).not.toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/flight");
   });
 
   it("shows the server error message when SSO login fails", async () => {
@@ -196,6 +206,7 @@ describe("InputContent (login) — Google SSO", () => {
     await waitFor(() =>
       expect(screen.getByText("Invalid Google token")).toBeInTheDocument(),
     );
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("submits the Google credential as the request payload", async () => {
@@ -233,5 +244,6 @@ describe("InputContent (login) — Google SSO", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 });
