@@ -98,6 +98,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       <main className="flex-1">{children}</main>
+
+      <footer className="border-t border-slate-200 bg-white mt-auto">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2 text-blue-700">
+            <Plane size={24} />
+            <span className="text-xl font-bold tracking-tight">Flybook</span>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
+            <Link
+              href="#"
+              className="hover:text-blue-700 transition-colors duration-200"
+            >
+              Company
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-blue-700 transition-colors duration-200"
+            >
+              Support
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-blue-700 transition-colors duration-200"
+            >
+              Terms
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-blue-700 transition-colors duration-200"
+            >
+              Privacy
+            </Link>
+          </div>
+
+          <div className="text-xs text-slate-400 text-center md:text-right">
+            © 2026 Flybook. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
