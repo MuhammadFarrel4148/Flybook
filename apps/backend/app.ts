@@ -7,6 +7,7 @@ import express, {
 } from "express";
 import cors from "cors";
 import authRouter from "./src/routes/auth/auth.routes.ts";
+import ticketRouter from "./src/routes/ticket/ticket.routes.ts";
 import { ClientError } from "./exceptions/ClientError.ts";
 
 const app: Express = express();
@@ -24,6 +25,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
+app.use("/api/ticket", ticketRouter);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 4th param required so Express treats this as error-handling middleware
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
