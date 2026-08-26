@@ -4,6 +4,6 @@ import { assertTestDatabaseUrl } from "./assertTestDatabase.ts";
 export async function resetDatabase(): Promise<void> {
   assertTestDatabaseUrl(process.env.DATABASE_URL);
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "users" RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE "users", "flights", "seats" RESTART IDENTITY CASCADE',
   );
 }
